@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jogo de Adivinhação</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: white;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      text-align: center;
+    }
+    #guessField {
+      width: 40px; /* Permitir apenas dois dígitos */
+    }
+    #restartButton {
+      margin-top: 20px;
+    }
+    #guessList, #guessedList {
+      list-style-type: none;
+      padding: 0;
+      display: inline-block;
+    }
+    #guessList {
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Jogo de Adivinhação</h1>
+    <p>Pense em um número de 1 a 99:</p>
+    <input type="text" id="guessField" onkeypress="return event.charCode >= 48 && event.charCode <= 57 && this.value.length < 2">
+    <button onclick="checkGuess()">Adivinhar!</button>
+    <p id="feedback"></p>
+    <p id="attempts"></p>
+    <button id="restartButton" style="display:none" onclick="restartGame()">Reiniciar Jogo</button>
+    <div>
+      <ul id="guessList"></ul>
+      <ul id="guessedList"></ul>
+    </div>
+  </div>
+
+  <script>
+    var randomNumber;
+    var attempts = 0;
+    var guessedNumbers = [];
+
+    document.getElementById("guessField").addEventListener("keyup", function(event) {
+      if (event.keyCode === 13) { // 13 é o código da tecla "Enter"
+        event.preventDefault();
+        checkGuess();
+      }
+    });
+
+    function checkGuess() {
+      var guessField = document.getElementById("guessField");
+      var guess = parseInt(guessField.value);
+
+      if (guessField.value === "") {
+        return; // Se a caixa de texto estiver vazia, não fazer nada
+      }
+
+      if (!randomNumber) {
+        randomNumber = Math.floor(Math.random() * 99) + 1;
+      }
+
+      if (guess === randomNumber) {
+        document.getElementById("feedback").innerHTML = "Parabéns! Você acertou!";
+        document.getElementById("restartButton").style.display = "block";
+      } else if (guess < randomNumber) {
+        document.getElementById("feedback").innerHTML = "Tente um número maior.";
+      } else {
+        document.getElementById("feedback").innerHTML = "Tente um número menor.";
+      }
+
+      // Se o número já foi adivinhado, exibir mensagem e retornar
+      if (guessedNumbers.includes(guess)) {
+        document.getElementById("feedback").innerHTML = "Este número já foi.";
+        return;
+      }
+
+      // Adicionar o número à lista de números adivinhados
+      guessedNumbers.push(guess);
+
+      // Atualizar o número de tentativas
+      attempts++;
+      document.getElementById("attempts").innerHTML = "Número de tentativas: " + attempts;
+
+      // Adicionar entrada à lista
+      var guessListItem = document.createElement("li");
+      guessListItem.textContent = guess + " - " + document.getElementById("feedback").innerHTML;
+      var guessList = document.getElementById("guessList");
+      if (guessList.firstChild) {
+        guessList.insertBefore(guessListItem, guessList.firstChild);
+      } else {
+        guessList.appendChild(guessListItem);
+      }
+
+      // Adicionar entrada à lista em ordem decrescente
+      var guessedListItem = document.createElement("li");
+      guessedListItem.textContent = guess;
+      var guessedList = document.getElementById("guessedList");
+      if (guessedList.firstChild) {
+        var inserted = false;
+        for (var i = 0; i < guessedList.children.length; i++) {
+          if (guess > parseInt(guessedList.children[i].textContent)) {
+            guessedList.insertBefore(guessedListItem, guessedList.children[i]);
+            inserted = true;
+            break;
+          }
+        }
+        if (!inserted) {
+          guessedList.appendChild(guessedListItem);
+        }
+      } else {
+        guessedList.appendChild(guessedListItem);
+      }
+
+      // Limpar o campo de entrada
+      guessField.value = "";
+    }
+
+    function restartGame() {
+      randomNumber = null;
+      attempts = 0;
+      guessedNumbers = [];
+      document.getElementById("guessList").innerHTML = "";
+      document.getElementById("guessedList").innerHTML = "";
+      document.getElementById("feedback").innerHTML = "";
+      document.getElementById("attempts").innerHTML = "";
+      document.getElementById("restartButton").style.display = "none";
+    }
+  </script>
+</body>
+</html>

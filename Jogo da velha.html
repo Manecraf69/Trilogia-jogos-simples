@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Velha</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #ffffff;
+        }
+        .board {
+            display: none;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 300px;
+            margin: 0 auto;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            font-size: 40px;
+            border: 1px solid #000;
+            cursor: pointer;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #result {
+            margin-top: 20px;
+            display: none; /* Inicialmente invisível */
+        }
+        #restart, #reset {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            display: none; /* Inicialmente invisível */
+        }
+        #button-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px; /* Espaço entre os botões */
+        }
+        #score {
+            margin-top: 20px;
+            font-size: 18px;
+            display: none; /* Inicialmente invisível */
+        }
+        .options {
+            margin-top: 50px;
+        }
+        .difficulty {
+            display: none;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Jogo da Velha</h1>
+
+    <div class="options">
+        <button onclick="selectMode('singleplayer')">Singleplayer</button>
+        <button onclick="selectMode('multiplayer')">Multiplayer local</button>
+    </div>
+
+    <div class="difficulty">
+        <button onclick="startGame('easy')">Fácil</button>
+        <button onclick="startGame('medium')">Médio</button>
+        <button onclick="startGame('hard')">Difícil</button>
+    </div>
+
+    <div class="board" id="board">
+        <div class="cell" onclick="makeMove(0)"></div>
+        <div class="cell" onclick="makeMove(1)"></div>
+        <div class="cell" onclick="makeMove(2)"></div>
+        <div class="cell" onclick="makeMove(3)"></div>
+        <div class="cell" onclick="makeMove(4)"></div>
+        <div class="cell" onclick="makeMove(5)"></div>
+        <div class="cell" onclick="makeMove(6)"></div>
+        <div class="cell" onclick="makeMove(7)"></div>
+        <div class="cell" onclick="makeMove(8)"></div>
+    </div>
+    
+    <p id="result"></p>
+
+    <div id="button-container">
+        <button id="restart" onclick="restartGame()">Próxima rodada</button>
+        <button id="reset" onclick="resetGame()">Resetar Partida</button>
+    </div>
+
+    <div id="score">(X) <span id="scoreX">0</span> = <span id="scoreO">0</span> (O)</div>
+
+    <script>
+        let currentPlayer = 'X';
+        let moves = ['', '', '', '', '', '', '', '', ''];
+        const winCombos = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6]
+        ];
+        let scoreX = 0;
+        let scoreO = 0;
+        let gameMode = '';
+        let difficulty = '';
+
+        function selectMode(mode) {
+            gameMode = mode;
+            document.querySelector('.options').style.display = 'none';
+            if (mode === 'singleplayer') {
+                document.querySelector('.difficulty').style.display = 'block';
+            } else {
+                startGame();
+            }
+        }
+
+        function startGame(diff = '') {
+            if (diff) {
+                difficulty = diff;
+            }
+            document.querySelector('.difficulty').style.display = 'none';
+            document.getElementById('board').style.display = 'flex';
+            document.getElementById('result').style.display = 'block'; // Torna visível
+            document.getElementById('score').style.display = 'block'; // Torna visível
+            document.getElementById('restart').style.display = 'none'; // Inicialmente invisível
+            document.getElementById('reset').style.display = 'block'; // Sempre visível durante a partida
+        }
+
+        function makeMove(index) {
+            if (moves[index] === '') {
+                moves[index] = currentPlayer;
+                document.getElementsByClassName('cell')[index].innerText = currentPlayer;
+                if (checkWin(currentPlayer)) {
+                    document.getElementById('result').innerText = `Jogador (${currentPlayer}) ganhou!`;
+                    updateScore(currentPlayer);
+                    disableBoard();
+                    document.getElementById('restart').style.display = 'block'; // Aparece após vitória
+                } else if (moves.every(move => move !== '')) {
+                    document.getElementById('result').innerText = "Deu velha!";
+                    document.getElementById('restart').style.display = 'block'; // Aparece após empate
+                } else {
+                    if (gameMode === 'singleplayer' && currentPlayer === 'X') {
+                        currentPlayer = 'O';
+                        makeComputerMove(); // Jogada imediata
+                    } else {
+                        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                    }
+                }
+            }
+        }
+
+        function checkWin(player) {
+            return winCombos.some(combo => {
+                return combo.every(index => moves[index] === player);
+            });
+        }
+
+        function disableBoard() {
+            Array.from(document.getElementsByClassName('cell')).forEach(cell => {
+                cell.onclick = null;
+            });
+        }
+
+        function restartGame() {
+            moves = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            document.getElementById('result').innerText = '';
+            Array.from(document.getElementsByClassName('cell')).forEach(cell => {
+                cell.innerText = '';
+                cell.onclick = () => makeMove(Array.from(document.getElementsByClassName('cell')).indexOf(cell));
+            });
+            document.getElementById('restart').style.display = 'none'; // Oculta novamente
+        }
+
+        function resetGame() {
+            document.getElementById('board').style.display = 'none';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('restart').style.display = 'none';
+            document.getElementById('reset').style.display = 'none';
+            document.getElementById('score').style.display = 'none';
+            document.querySelector('.options').style.display = 'block';
+
+            restartGame()
+            scoreX = 0;
+            scoreO = 0;
+            document.getElementById('scoreX').innerText = scoreX;
+            document.getElementById('scoreO').innerText = scoreO;
+            }
+
+        function updateScore(player) {
+            if (player === 'X') {
+                scoreX++;
+                document.getElementById('scoreX').innerText = scoreX;
+            } else {
+                scoreO++;
+                document.getElementById('scoreO').innerText = scoreO;
+            }
+        }
+
+        function makeComputerMove() {
+            let emptyCells = moves.map((move, index) => move === '' ? index : null).filter(index => index !== null);
+
+            let winningMove = findWinningMove('O');
+            let blockingMove = findWinningMove('X');
+
+            if (winningMove !== null) {
+                makeMove(winningMove);
+                return;
+            }
+
+            if (difficulty === 'hard' && blockingMove !== null && winningMove === null) {
+                makeMove(blockingMove);
+                return;
+            }
+
+            if (blockingMove !== null) {
+                if (difficulty === 'hard' && shouldMakeRandomMove()) {
+                    makeRandomMove(emptyCells);
+                } else {
+                    makeMove(blockingMove);
+                }
+                return;
+            }
+
+            makeRandomMove(emptyCells);
+        }
+
+        function shouldMakeRandomMove() {
+            if (difficulty === 'easy') {
+                return Math.random() < 0.25;
+            } else if (difficulty === 'medium') {
+                return Math.random() < 0.10;
+            }
+            return false;
+        }
+
+        function makeRandomMove(emptyCells) {
+            let randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            makeMove(randomIndex);
+        }
+
+        function findWinningMove(player) {
+            for (let combo of winCombos) {
+                let [a, b, c] = combo;
+                let values = [moves[a], moves[b], moves[c]];
+
+                if (values.filter(value => value === player).length === 2 && values.includes('')) {
+                    return combo[values.indexOf('')];
+                }
+            }
+            return null;
+        }
+    </script>
+</body>
+</html>

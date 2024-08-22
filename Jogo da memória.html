@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jogo da Memória</title>
+<style>
+  body {
+    background-color: white; /* Fundo branco */
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+  h1 {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 2rem;
+  }
+  .container {
+    display: none; /* Inicialmente oculto */
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    margin-top: 20px;
+  }
+  .score {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+  }
+  #reset-button {
+    padding: 10px 20px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  .board-container {
+    display: flex;
+    justify-content: center; /* Centraliza o grid das cartas */
+    align-items: center;
+    flex-direction: column;
+    margin-top: 20px;
+    visibility: hidden; /* Inicialmente oculto */
+  }
+  .board {
+    display: grid;
+    grid-template-columns: repeat(4, 80px); /* Dimensões ajustadas */
+    gap: 5px;
+    padding: 20px;
+    justify-items: center;
+  }
+  .card {
+    width: 80px; /* Ajuste de tamanho */
+    height: 80px; /* Ajuste de tamanho */
+    background-color: lightblue;
+    border: 2px solid white;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    font-size: 1.6rem; /* Ajuste de tamanho */
+  }
+  .card.flip {
+    transform: rotateY(180deg);
+  }
+  .buttons {
+    text-align: center; /* Centralizar os botões */
+    margin-top: 20px;
+  }
+  button {
+    margin: 0 10px;
+    padding: 10px 20px;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  .timer {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    visibility: hidden; /* Inicialmente invisível */
+  }
+</style>
+</head>
+<body>
+
+<h1>Jogo da Memória</h1>
+
+<div class="container">
+  <div class="score">Pontuação: <span id="score">0</span></div>
+  <div id="timer" class="timer"></div>
+  <button id="reset-button" onclick="resetGame()">Resetar Jogo</button>
+</div>
+
+<div class="buttons">
+  <button onclick="startGame(false)">Começar o jogo sem ajuda</button>
+  <button onclick="startGame(true)">Começar o jogo com ajuda</button>
+</div>
+
+<div class="board-container">
+  <div class="board"></div>
+</div>
+
+<script>
+  const board = document.querySelector('.board');
+  const scoreDisplay = document.getElementById('score');
+  let flippedCards = [];
+  let score = 0;
+  let timerSeconds = 0;
+  let timerInterval;
+  const numberOfCards = 16;
+  const allIcons = ['🍎', '🍌', '🍇', '🍉', '🍓', '🍒', '🍍', '🥥', '🍎', '🍌', '🍇', '🍉', '🍓', '🍒', '🍍', '🥥'];
+
+  // Função para iniciar o jogo
+  function startGame(showHelp) {
+    resetGame(); // Resetar o jogo antes de começar
+
+    const buttons = document.querySelector('.buttons');
+    buttons.style.display = 'none'; // Esconder os botões iniciais
+
+    if (showHelp) {
+        score = 0;
+        timerSeconds = 45; // Tempo para o modo com ajuda
+        startGameWithHelp();
+    } else {
+        score = 10;
+        timerSeconds = 60; // Tempo para o modo sem ajuda
+        document.getElementById('timer').style.visibility = 'visible'; // Tornar o cronômetro visível
+        startTimer(timerSeconds);
+    }
+
+    scoreDisplay.textContent = score; // Atualizar a pontuação inicial
+    document.querySelector('.container').style.display = 'flex'; // Mostrar a pontuação e o botão de reset
+    board.style.visibility = 'visible'; // Mostrar o tabuleiro
+    document.querySelector('.board-container').style.visibility = 'visible'; // Mostrar o cronômetro e o tabuleiro
+  }
+
+  function startGameWithHelp() {
+    document.getElementById('timer').style.visibility = 'hidden'; // Temporariamente ocultar o cronômetro
+    showAllCards(); // Mostrar todas as cartas por um tempo
+    setTimeout(() => {
+      hideAllCards(); // Esconder as cartas novamente
+      document.getElementById('timer').style.visibility = 'visible'; // Mostrar o cronômetro
+      startTimer(timerSeconds); // Começar o cronômetro após esconder as cartas
+    }, 3000); // 3 segundos para o jogador memorizar as cartas
+  }
+
+  function showAllCards() {
+    document.querySelectorAll('.card').forEach(card => {
+      card.textContent = card.dataset.icon;
+      card.classList.add('flip');
+    });
+  }
+
+  function hideAllCards() {
+    document.querySelectorAll('.card').forEach(card => {
+      card.textContent = '';
+      card.classList.remove('flip');
+    });
+  }
+
+  // Função para virar as cartas
+  function flipCard() {
+    if (flippedCards.length < 2 && !this.classList.contains('flip')) {
+      this.textContent = this.dataset.icon;
+      this.classList.add('flip');
+      flippedCards.push(this);
+      if (flippedCards.length === 2) {
+        checkMatch();
+      }
+    }
+  }
+
+  // Função para verificar se as cartas são iguais
+  function checkMatch() {
+    const [card1, card2] = flippedCards;
+    if (card1.dataset.icon === card2.dataset.icon) {
+      score += 5; // Adicionar 5 pontos ao acerto
+      scoreDisplay.textContent = score; // Atualizar a exibição da pontuação
+      setTimeout(() => {
+        card1.removeEventListener('click', flipCard);
+        card2.removeEventListener('click', flipCard);
+        flippedCards = [];
+        if (document.querySelectorAll('.flip').length === numberOfCards) {
+          endGame(true); // Jogo completo
+        }
+      }, 1000);
+    } else {
+      score = Math.max(0, score - 1); // Subtrair 1 ponto em caso de erro, garantindo que a pontuação não seja negativa
+      scoreDisplay.textContent = score; // Atualizar a exibição da pontuação
+      setTimeout(() => {
+        card1.textContent = '';
+        card1.classList.remove('flip');
+        card2.textContent = '';
+        card2.classList.remove('flip');
+        flippedCards = [];
+      }, 1000);
+    }
+  }
+
+  // Função para iniciar o cronômetro
+  function startTimer(timeLimit) {
+    timerSeconds = timeLimit;
+    updateTimerDisplay();
+    timerInterval = setInterval(() => {
+      timerSeconds--;
+      updateTimerDisplay();
+      if (timerSeconds === 0) {
+        clearInterval(timerInterval);
+        alert('Tempo esgotado!');
+        // Desativar o evento de clique nas cartas após o tempo acabar
+        document.querySelectorAll('.card').forEach(card => {
+          card.removeEventListener('click', flipCard);
+        });
+        endGame(false);
+      }
+    }, 1000);
+  }
+
+  // Função para atualizar a exibição do cronômetro
+  function updateTimerDisplay() {
+    const minutes = Math.floor(timerSeconds / 60);
+    const seconds = timerSeconds % 60;
+    document.getElementById('timer').textContent = `Tempo: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  // Função para encerrar o jogo
+  function endGame(win) {
+    clearInterval(timerInterval); // Parar o cronômetro
+    if (win) {
+      alert(`Você venceu o jogo! Você fez ${score} pontos.`);
+    } else {
+      alert('Você não conseguiu :(');
+    }
+  }
+
+  // Função para resetar o jogo
+  function resetGame() {
+    // Esconder o tabuleiro e os botões
+    board.style.visibility = 'hidden';
+    document.querySelector('.container').style.display = 'none'; // Oculta o placar e o botão de reset
+    document.querySelector('.board-container').style.visibility = 'hidden'; // Oculta o cronômetro
+    document.querySelector('.buttons').style.display = 'block'; // Mostra os botões iniciais
+
+    // Reiniciar o contador de tempo
+    clearInterval(timerInterval);
+
+    // Remover todas as cartas do tabuleiro
+    document.querySelectorAll('.card').forEach(card => {
+      card.remove();
+    });
+
+    // Embaralhar os ícones novamente
+    allIcons.sort(() => Math.random() - 0.5);
+
+    // Recriar as cartas
+    for (let i = 0; i < numberOfCards; i++) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.icon = allIcons[i];
+      card.addEventListener('click', flipCard);
+      board.appendChild(card);
+    }
+  }
+</script>
+</body>
+</html>
